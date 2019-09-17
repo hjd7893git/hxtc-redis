@@ -1,11 +1,7 @@
+package cm1;
 
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.ShardedJedis;
 import redis.clients.jedis.ShardedJedisPool;
-
-import java.util.Arrays;
-import java.util.List;
 
 public class RedisService {
 
@@ -24,7 +20,6 @@ public class RedisService {
             }
         }
     }
-
 
     /**
      * 执行set操作
@@ -100,6 +95,21 @@ public class RedisService {
             }
         });
     }
+
+    /**
+     * 判断集合中的指定的key是否存在
+     * @param key
+     * @return
+     */
+    public Boolean existsKey(final String key) {
+        return this.execute(new Function<Boolean, ShardedJedis>() {
+            public Boolean callback(ShardedJedis e) {
+                return e.exists(key);
+            }
+        });
+    }
+
+
 }
 
 
