@@ -4,7 +4,17 @@ import redis.clients.jedis.ShardedJedis;
 import redis.clients.jedis.ShardedJedisPool;
 
 public class RedisServiceList {
-    private ShardedJedisPool shardedJedisPool = InitShardedJedisPool.getShardedJedisPool();
+    private ShardedJedisPool shardedJedisPool;
+
+    public RedisServiceList() {
+        this.shardedJedisPool = new InitShardedJedisPool().getShardedJedisPool();
+    }
+
+    public RedisServiceList(String host, int port, int timeout) throws Exception  {
+        this.shardedJedisPool = InitRedisShardedJedisPool.getInitRedisShardedJedisPool().getShardedJedisPool(host, port, timeout);
+    }
+
+//    private ShardedJedisPool shardedJedisPool = InitShardedJedisPool.getShardedJedisPool();
 
     private <T> T execute(Function<T, ShardedJedis> fun) {
         ShardedJedis shardedJedis = null;
@@ -83,10 +93,11 @@ public class RedisServiceList {
 
     /**
      * 获得列表数据长度
+     *
      * @param key
      * @return
      */
-    public Long llen(final String key){
+    public Long llen(final String key) {
         return this.execute(new Function<Long, ShardedJedis>() {
             public Long callback(ShardedJedis e) {
                 return e.llen(key);

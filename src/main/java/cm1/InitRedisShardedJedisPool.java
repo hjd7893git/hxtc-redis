@@ -10,8 +10,12 @@ import java.util.List;
 /**
  * Created by Administrator on 2019/9/11.
  */
-public class InitShardedJedisPool {
-    public static ShardedJedisPool getShardedJedisPool() {
+public class InitRedisShardedJedisPool {
+    private static InitRedisShardedJedisPool initRedisShardedJedisPool = new InitRedisShardedJedisPool();
+    public static InitRedisShardedJedisPool getInitRedisShardedJedisPool() {
+        return initRedisShardedJedisPool;
+    }
+    public static ShardedJedisPool getShardedJedisPool(String host,int port,int timeout) throws Exception{
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(5); //最大连接数，在指定时刻通过pool能够获取到的最大的连接的jedis个数 10
         poolConfig.setMaxIdle(1); // 最大空闲连接数,  最大能够保持idle的数量，控制一个pool最多有多少个状态为idle的jedis实例 8
@@ -20,8 +24,8 @@ public class InitShardedJedisPool {
         poolConfig.setTestOnReturn(false);
 
         //设置Redis信息
-        String host = "127.0.0.1";
-        JedisShardInfo shardInfo1 = new JedisShardInfo(host, 6379, 500);
+        JedisShardInfo shardInfo1 = new JedisShardInfo(host, port, timeout);
+        shardInfo1.createResource().ping();
 
 //        shardInfo1.setPassword("test123");
 
