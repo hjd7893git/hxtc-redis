@@ -15,7 +15,7 @@ public class InitRedisShardedJedisPool {
     public static InitRedisShardedJedisPool getInitRedisShardedJedisPool() {
         return initRedisShardedJedisPool;
     }
-    public static ShardedJedisPool getShardedJedisPool(String host,int port,int timeout) throws Exception{
+    public static ShardedJedisPool getShardedJedisPool(String host, int port, String password, int timeout) throws Exception {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(5); //最大连接数，在指定时刻通过pool能够获取到的最大的连接的jedis个数 10
         poolConfig.setMaxIdle(1); // 最大空闲连接数,  最大能够保持idle的数量，控制一个pool最多有多少个状态为idle的jedis实例 8
@@ -25,9 +25,9 @@ public class InitRedisShardedJedisPool {
 
         //设置Redis信息
         JedisShardInfo shardInfo1 = new JedisShardInfo(host, port, timeout);
+        if (!"".equals(password)) shardInfo1.setPassword(password);
         shardInfo1.createResource().ping();
 
-//        shardInfo1.setPassword("test123");
 
 //        JedisShardInfo shardInfo2 = new JedisShardInfo(host, 6380, 500);
 //        shardInfo2.setPassword("test123");

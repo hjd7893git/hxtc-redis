@@ -10,8 +10,8 @@ public class RedisServiceList {
         this.shardedJedisPool = new InitShardedJedisPool().getShardedJedisPool();
     }
 
-    public RedisServiceList(String host, int port, int timeout) throws Exception  {
-        this.shardedJedisPool = InitRedisShardedJedisPool.getInitRedisShardedJedisPool().getShardedJedisPool(host, port, timeout);
+    public RedisServiceList(String host, int port, String password, int timeout) throws Exception {
+        this.shardedJedisPool = InitRedisShardedJedisPool.getInitRedisShardedJedisPool().getShardedJedisPool(host, port, password, timeout);
     }
 
 //    private ShardedJedisPool shardedJedisPool = InitShardedJedisPool.getShardedJedisPool();
@@ -59,22 +59,25 @@ public class RedisServiceList {
     }
 
     /**
-     * 移除并获取列表中的第一个元素
+     * 移除并获取列表中的第5个元素，按照时间要求
      */
-    public String lpop(final String key, String time) {
+    public String lpop(final String key,final long time) {
         final String mok = this.execute(new Function<String, ShardedJedis>() {
             public String callback(ShardedJedis e) {
-                return e.lindex(key, 0);
+                return e.lindex(key, time);
             }
         });
-        if (!existsKey(key) && Long.parseLong(mok.split("\\|")[2]) >= Long.parseLong(time)) {
+        if (mok == null) return ""; //当缓存数量少于5时，start
+//        if (!existsKey(key) && Long.parseLong(mok.split("\\|")[2]) >= Long.parseLong(time))
+        else {
             this.execute(new Function<Long, ShardedJedis>() {
                 public Long callback(ShardedJedis e) {
                     return e.lrem(key, 0L, mok);
                 }
             });
             return mok;
-        } else return "";
+        }
+//        else return "";
     }
 
     /**
@@ -101,6 +104,14 @@ public class RedisServiceList {
         return this.execute(new Function<Long, ShardedJedis>() {
             public Long callback(ShardedJedis e) {
                 return e.llen(key);
+            }
+        });
+    }
+
+    public String indexde(final String key,final long index) {
+        return this.execute(new Function<String, ShardedJedis>() {
+            public String callback(ShardedJedis e) {
+                return e.lindex(key, index);
             }
         });
     }
