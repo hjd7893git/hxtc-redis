@@ -5,9 +5,11 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import com.mongodb.MongoException;
 import com.mongodb.client.*;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.IndexOptions;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.json.JsonMode;
@@ -24,26 +26,42 @@ import java.util.*;
 public class MongoDBAPI {
     private MongoDatabase mongoDatabase;
 
-    public MongoDBAPI(String host, int port, String group) {
-        MongoHelper mongoHelper = new MongoHelper(host, port, group);
+    public MongoDBAPI(String host, int port, int timeout, String group) {
+        MongoHelper mongoHelper = new MongoHelper(host, port, timeout, group);
         mongoDatabase = mongoHelper.getMongoDatabase();
+    }
+
+    public void saveStatisticsDate(String gatherDate, long clusterId) {
+        MongoCollection<Document> collection = mongoDatabase.getCollection("StatisticsDate");
+        Document document = new Document("gatherDate", gatherDate).append("clusterId", clusterId);
+        collection.createIndex(new Document("gatherDate", 1), new IndexOptions().unique(true));//创建索引
+        try {
+            collection.insertOne(document);
+        }catch (MongoException e){
+
+        }
     }
 
     public void saveStatisticsMachine(String statisticsmachine) {
         MongoCollection<Document> collection = mongoDatabase.getCollection("StatisticsMachine");
-        Document document = new Document(BeanUtil.beanToMap(JSONUtil.toBean(statisticsmachine, StatisticsMachine.class)));
+        StatisticsMachine statisticsMachine = JSONUtil.toBean(statisticsmachine, StatisticsMachine.class);
+        Document document = new Document(BeanUtil.beanToMap(statisticsMachine));
+        collection.createIndex(new Document("gatherDatetime", 1));//创建索引
         collection.insertOne(document);
+        saveStatisticsDate(statisticsMachine.getGatherDatetime().substring(0, 8), statisticsMachine.getClusterId());
     }
 
     public void saveStatisticsExchange(String statisticsexchange) {
         MongoCollection<Document> collection = mongoDatabase.getCollection("StatisticsExchange");
         Document document = new Document(BeanUtil.beanToMap(JSONUtil.toBean(statisticsexchange, StatisticsExchange.class)));
+        collection.createIndex(new Document("gatherDatetime", 1));//创建索引
         collection.insertOne(document);
     }
 
     public void saveStatisticsNode(String statisticsnode) {
         MongoCollection<Document> collection = mongoDatabase.getCollection("StatisticsNode");
         Document document = new Document(BeanUtil.beanToMap(JSONUtil.toBean(statisticsnode, StatisticsNode.class)));
+        collection.createIndex(new Document("gatherDatetime", 1));//创建索引
         collection.insertOne(document);
     }
 
@@ -109,13 +127,13 @@ public class MongoDBAPI {
 
 
     public String[] historyCalendar(Long clusterId, String date) throws ParseException {
-        String date1 = date.substring(0, 6) + "01000000";
-        String date2 = dateTimeExec(date.substring(0, 6) + "01000000");
-        MongoCollection<Document> collection = mongoDatabase.getCollection("StatisticsExchange");
-        Bson filter = Filters.and(Filters.lte("gatherDatetime", date2), Filters.gte("gatherDatetime", date1), Filters.eq("clusterId", clusterId));
+        String date1 = date + "01";
+        String date2 = dateTimeExec(date + "01");
+        MongoCollection<Document> collection = mongoDatabase.getCollection("StatisticsDate");
+        Bson filter = Filters.and(Filters.lte("gatherDate", date2), Filters.gte("gatherDate", date1), Filters.eq("clusterId", clusterId));
         //时间切割
         BasicDBObject my_time = new BasicDBObject();
-        my_time.append("$substr", new Object[]{"$gatherDatetime", 0, 8});
+        my_time.append("$substr", new Object[]{"$gatherDate", 0, 8});
         //设定查询别名
         DBObject time = new BasicDBObject();
         time.put("new_time_stamp", my_time);
@@ -150,7 +168,7 @@ public class MongoDBAPI {
     }
 
     private String dateTimeExec(String time) throws ParseException {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         Date date = sdf.parse(time);
         Calendar instance = Calendar.getInstance();
         instance.setTime(date);
