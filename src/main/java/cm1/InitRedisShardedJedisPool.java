@@ -26,7 +26,7 @@ public class InitRedisShardedJedisPool {
         //设置Redis信息
         JedisShardInfo shardInfo1 = new JedisShardInfo(host, port, timeout);
         if (!"".equals(password)) shardInfo1.setPassword(password);
-        shardInfo1.createResource().ping();
+        System.out.println("--->redis"+host+":"+port+"连接成功："+shardInfo1.createResource().ping());
 
 
 //        JedisShardInfo shardInfo2 = new JedisShardInfo(host, 6380, 500);

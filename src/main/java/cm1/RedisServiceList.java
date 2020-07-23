@@ -36,9 +36,10 @@ public class RedisServiceList {
      * @param value
      * @return
      */
-    public Long lpush(final String key, final String value) {
+    public Long lpush(final String key, final String value,int expireTime) {
         return this.execute(new Function<Long, ShardedJedis>() {
             public Long callback(ShardedJedis e) {
+                e.expire(key, expireTime); //默认有效时间为10分钟
                 return e.lpush(key, value);
             }
         });
@@ -53,9 +54,23 @@ public class RedisServiceList {
     public String rpop(final String key) {
         return this.execute(new Function<String, ShardedJedis>() {
             public String callback(ShardedJedis e) {
-                return e.rpop(key);
+                String val = e.rpop(key);
+                return val;
             }
         });
+    }
+    public String rpop2(final String key, int count) {
+        return this.execute(new Function<String, ShardedJedis>() {
+            public String callback(ShardedJedis e) {
+                e.ltrim(key, 0,  count);
+                String val = e.rpop(key);
+                return val;
+            }
+        });
+    }
+
+    public Long clean(final String key) {
+        return this.execute((Function<Long, ShardedJedis>) e -> e.del(key));
     }
 
     /**
@@ -112,6 +127,36 @@ public class RedisServiceList {
         return this.execute(new Function<String, ShardedJedis>() {
             public String callback(ShardedJedis e) {
                 return e.lindex(key, index);
+            }
+        });
+    }
+
+    /**
+     * 执行set操作并且设置生存时间，单位为：秒
+     *
+     * @param key
+     * @param value
+     * @return
+     */
+    public String set(final String key, final String value, final Integer seconds) {
+        return this.execute(new Function<String, ShardedJedis>() {
+            public String callback(ShardedJedis e) {
+                String str = e.set(key, value);
+                e.expire(key, seconds);
+                return str;
+            }
+        });
+    }
+    /**
+     * 执行get操作
+     *
+     * @param key
+     * @return
+     */
+    public String get(final String key) {
+        return this.execute(new Function<String, ShardedJedis>() {
+            public String callback(ShardedJedis e) {
+                return e.get(key);
             }
         });
     }
